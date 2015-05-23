@@ -1,0 +1,25 @@
+{
+  "name": "spotify-recommend",
+  "version": "1.0.0",
+  "description": "spotify example for thinkful.com",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tstuart/spotify-recommend.git"
+  },
+  "keywords": [
+    "thinkful.com",
+    "spotify",
+    "node",
+    "events"
+  ],
+  "author": "Tim Stuart",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tstuart/spotify-recommend/issues"
+  },
+  "homepage": "https://github.com/tstuart/spotify-recommend#readme"
+}
