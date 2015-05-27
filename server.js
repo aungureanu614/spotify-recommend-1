@@ -33,58 +33,103 @@ var getTracks = function(artist, cb) {
 };
 
 app.get('/search/:name', function(req, res) {
-  var searchReq = getFromApi('search', {
-    q: req.params.name,
-      limit: 1,
-      type: 'artist'
-  });
 
-  searchReq.on('end', function(item) {
-      var artist = item.artists.items[0];
-      unirest.get('https://api.spotify.com/v1/artists/' + artist.id + '/related-artists')
-          .end(function(response) {
-              if (!response.error) {
-                  artist.related = response.body.artists;
+    var searchReq = getFromApi('search', {
+        q: req.params.name,
+        limit: 1,
+        type: 'artist'
+    });
 
-                  // now get top tracks for all artists
-                  var totalArtists = artist.related.length;
-                  var completed = 0;
+    searchReq.on('end', function(item) {
+        var artist = item.artists.items[0];
+        var relatedEP = 'artists/' + artist.id + '/related-artists';
+        var relatedReq = getFromApi(relatedEP);
 
-                  //console.log(totalArtists);
-                  //console.log(completed);
+        relatedReq.on('end', function(item) {
+            artist.related = item.artists;
 
-                  var checkComplete = function() {
-                      if (completed === totalArtists) {
-                          res.json(artist);
-                      }
-                  };
+            // now get top tracks for all artists
+            var totalArtists = artist.related.length;
+            var completed = 0;
 
-                  artist.related.forEach(function(artist) {
-                      getTracks(artist, function(err) {
-                          if (err) {
-                              // This doesn't work.  Work on error handling.
-                              res.sendStatus(404);
-                          }
+            // this will check to see if we are done
+            // and return the entire artist object
+            var checkComplete = function() {
+                if (completed === totalArtists) {
+                    res.json(artist);
+                }
+            };
 
-                          completed += 1;
-                          checkComplete();
+            // For each related artist, get top tracks
+            artist.related.forEach(function(relatedArtist) {
+                var trackEP = 'artists/' + relatedArtist.id + '/top-tracks';
+                var trackReq = getFromApi(trackEP, {country: 'US'});
 
-                      });
-                  });
+                trackReq.on('end', function(item) {
+                    relatedArtist.tracks = item.tracks;
+                    completed += 1;
+                    checkComplete();
+                });
 
-              } else {
-                  res.sendStatus(404);
-              }
+                trackReq.on('error', function() {
+                    res.sendStatus(404);
+                });
 
-          });
-      
-  });
+            });
 
-  searchReq.on('error', function() {
-      res.sendStatus(404);
-  });
+        });
+
+        relatedReq.on('error', function() {
+            res.sendStatus(404);
+        });
+    });
+
+    searchReq.on('error', function() {
+        res.sendStatus(404);
+    });
+
 
 });
 
 app.listen(8080);
+
+/*
+
+ unirest.get('https://api.spotify.com/v1/artists/' + artist.id + '/related-artists')
+ .end(function(response) {
+ if (!response.error) {
+ artist.related = response.body.artists;
+
+ // now get top tracks for all artists
+ var totalArtists = artist.related.length;
+ var completed = 0;
+
+ //console.log(totalArtists);
+ //console.log(completed);
+
+ var checkComplete = function() {
+ if (completed === totalArtists) {
+ res.json(artist);
+ }
+ };
+
+ artist.related.forEach(function(artist) {
+ getTracks(artist, function(err) {
+ if (err) {
+ // This doesn't work.  Work on error handling.
+ res.sendStatus(404);
+ }
+
+ completed += 1;
+ checkComplete();
+
+ });
+ });
+
+ } else {
+ res.sendStatus(404);
+ }
+
+ });
+ */
 
